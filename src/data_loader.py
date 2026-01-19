@@ -6,7 +6,7 @@ import pandas as pd
 def load_fd001(
         data_path: str | Path,
         rul_col: str = 'RUL',
-        cap_rul: str = 125,
+        cap_rul: int = 125,
 ) -> pd.DataFrame:
     """ Load the processed FD001 dataset and apply the shared preprocessing"""
     data_path = Path(data_path)
@@ -23,3 +23,5 @@ def load_fd001(
 
     # Shared target for modeling
     df['RUL_capped'] = df[rul_col].clip(upper=cap_rul)
+
+    return df
