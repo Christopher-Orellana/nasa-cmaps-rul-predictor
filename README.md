@@ -29,6 +29,13 @@ predictive maintenance.
 
 ---
 
+## System Design
+This project includes a system-level design for inference, decision logic, and monitoring.
+
+See: docs/system_design.md
+
+---
+
 ## Approach Overview
 
 This analysis begins with the FD001 subset, which represents a  
@@ -71,6 +78,13 @@ relative to the final observed cycle for each engine.
 
 ---
 
+## Artifacts
+Training exports versioned artifacts under `artifacts/`:
+- `feature_schema.json` inference contract + monitoring stats
+- `metrics.json` baseline performance + decision policy
+- `model.joblib`, `scaler.joblib`
+
+---
 ## Repository Structure
 
 
