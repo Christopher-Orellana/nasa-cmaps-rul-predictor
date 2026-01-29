@@ -1,0 +1,37 @@
+{
+  "artifact_version": "baseline_v1",
+  "dataset": "CMAPSS",
+  "subset": "FD001",
+  "rul_cap": 125,
+  "features": [
+    "sensor_4",
+    "sensor_11",
+    "sensor_15"
+  ],
+  "feature_order_enforced": true,
+  "training_stats": {
+    "sensor_4": {
+      "min": 1385.19,
+      "max": 1441.49,
+      "mean": 1408.879098484391,
+      "std": 8.965615731070594
+    },
+    "sensor_11": {
+      "min": 46.85,
+      "max": 48.52,
+      "mean": 47.53967091359218,
+      "std": 0.26573341069637957
+    },
+    "sensor_15": {
+      "min": 8.3279,
+      "max": 8.5848,
+      "mean": 8.442025336634261,
+      "std": 0.03750810314122689
+    }
+  },
+  "notes": {
+    "target": "RUL_capped",
+    "input_expectation": "Single timestep snapshot per engine cycle",
+    "extra_columns_policy": "HARD_ERROR"
+  }
+}

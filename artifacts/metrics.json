@@ -1,0 +1,41 @@
+{
+  "artifact_version": "baseline_v1",
+  "model_family": "LinearRegression",
+  "model_name": "OLS",
+  "features": [
+    "sensor_4",
+    "sensor_11",
+    "sensor_15"
+  ],
+  "target": "RUL_capped",
+  "split_strategy": {
+    "type": "GroupShuffleSplit",
+    "group": "unit_number",
+    "test_size": 0.2,
+    "random_state": 42
+  },
+  "preprocessing": {
+    "rul_definition": "max_cycle - time_in_cycles",
+    "rul_cap": 125,
+    "scaling": "StandardScaler (Fit on X_train only)"
+  },
+  "validation_metrics": {
+    "mae": 18.910577237810713,
+    "rmse": 23.376398081101474,
+    "r2": 0.6859802320934592
+  },
+  "model_coefficients": {
+    "sensor_4": -11.947350810620351,
+    "sensor_11": -15.35360863248452,
+    "sensor_15": -8.82950710204276
+  },
+  "intercept": 86.95881891190099,
+  "decision_policy": {
+    "lower_bound_method": "rul_lower = rul_pred - k * mae",
+    "k": 1.0
+  },
+  "data_fingerprint": {
+    "processed_csv": "C:\\Users\\User\\Documents\\school\\data_analysis_projects\\nasa-cmaps-pipeline\\data\\processed\\fd001_processed.csv",
+    "sha256": "374d18bf2b111489a2b0d562842bbdde0f931fdd4f7adefc004eeac4066d89e6"
+  }
+}

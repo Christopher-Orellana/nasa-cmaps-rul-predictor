@@ -14,7 +14,6 @@ __pycache__/
 # Data (raw & generated)
 data/
 data/raw/
-data/interim/
 data/processed/
 
 # OS-specific files
@@ -28,8 +27,7 @@ Thumbs.db
 # Logs & temp files
 *.log
 *.tmp
+logs/*
 
 # Model artifacts
-models/
-outputs/
-figures/generated/
+artifacts/*.joblib
