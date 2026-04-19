@@ -9,11 +9,15 @@ import joblib
 
 #
 EXPECTED_ARTIFACT_VERSION = "baseline_v1"
+REQUIRED_METADATA = ['unit_number']
 FEATURE_ORDER = ["sensor_4", "sensor_11", "sensor_15"]
+ALLOWED_INPUT_KEYS = set(REQUIRED_METADATA + FEATURE_ORDER)
 
 # Configuration for paths
 PROJECT_ROOT = Path(__file__).resolve()
 while not (PROJECT_ROOT / "artifacts").exists():
+    if PROJECT_ROOT == PROJECT_ROOT.parent:
+        raise RuntimeError("Could not find root containing /artifacts")
     PROJECT_ROOT = PROJECT_ROOT.parent
 
 ARTIFACT_DIR = PROJECT_ROOT / "artifacts"
@@ -45,21 +49,30 @@ def predict_rul(input_data: dict) -> dict:
     timestamp = datetime.utcnow().isoformat()
 
     # Validate schema
-    missing = set(FEATURE_ORDER) - set(input_data.keys())
-    extra = set(input_data.keys()) - set(FEATURE_ORDER)
+    missing_metadata = set(REQUIRED_METADATA) - set(input_data.keys())
+    missing_features = set(FEATURE_ORDER) - set(input_data.keys())
+    extra = set(input_data.keys()) - ALLOWED_INPUT_KEYS
 
-    if missing:
-        raise ValueError(f"Missing required features: {missing}")
+    if missing_metadata:
+        raise ValueError(f"Missing required metadata: {missing_metadata}")
+
+    if missing_features:
+        raise ValueError(f'Missing required features: {missing_features}')
 
     if extra:
-        raise ValueError(f"Unexpected extra features: {extra}")
+        raise ValueError(f"Unexpected extra fields: {extra}")
 
-    # Create dataframe with features in order
+    # Validate metadata
+    unit_number = input_data['unit_number']
+    if not isinstance(unit_number, (int, np.integer)):
+        raise ValueError('unit_number must be an integer')
+
+    # Create Dataframe with features in order
     X = pd.DataFrame([[input_data[feat] for feat in FEATURE_ORDER]], columns=FEATURE_ORDER)
 
     # Check datatype and sensor values
     if not np.isfinite(X.values).all():
-        raise ValueError("Input contains NaN or non-finite vales")
+        raise ValueError("Input contains NaN or non-finite values")
 
     # Check for anomalies and ranges of sensor values
     extrapolation_risk = False
@@ -102,6 +115,7 @@ def predict_rul(input_data: dict) -> dict:
 
     # Write output inference.jsonl
     output = {
+        "unit_number": int(unit_number),
         "timestamp": timestamp,
         "artifact_version": EXPECTED_ARTIFACT_VERSION,
         "rul_pred": rul_pred,

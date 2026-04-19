@@ -3,6 +3,7 @@ from src.inference.predict import predict_rul
 def main():
     # Example single-engine snapshot
     example_input = {
+        "unit_number": 1,
         "sensor_4": 1410.5,
         "sensor_11": 47.6,
         "sensor_15": 8.45
