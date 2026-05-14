@@ -7,7 +7,7 @@ import streamlit as st
 st.set_page_config(page_title="NASA CMAPS Dashboard", layout="wide")
 
 st.title("Predictive Maintenance Decision Dashboard")
-st.write("Checkpoint 3: Fleet overview and urgency-ranked table")
+st.write("Checkpoint 4: Fleet overview and urgency-ranked table, and snapshot detail view")
 
 DEMO_PATH = Path(__file__).resolve().parent / "dashboard_data" / "demo_inference.jsonl"
 
@@ -124,4 +124,49 @@ else:
         ranked_df['rul_lower'] = ranked_df['rul_lower'].round(2)
 
     st.dataframe(ranked_df, use_container_width=True, hide_index=True)
+
+    # --------------- Snapshot Detail View  ---------------
+    st.subheader('Snapshot Detail View')
+
+    detail_df = ranked_df.copy()
+
+    if 'timestamp' in detail_df.columns:
+        detail_df['timestamp_str'] = detail_df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        detail_df['timestamp_str'] = "Unknown"
+
+    detail_df['snapshot_label'] = (
+        "Unit "
+        + detail_df['unit_number'].astype(str)
+        + " | "
+        + detail_df['timestamp_str'].astype(str)
+        + " | "
+        + " | RUL Lower: "
+        + detail_df['rul_lower'].astype(str)
+    )
+
+    selected_label = st.selectbox(
+        "Select a scored engine snapshot",
+        detail_df["snapshot_label"].tolist()
+    )
+
+    selected_row = detail_df.loc[detail_df["snapshot_label"] == selected_label].iloc[0]
+
+    detail_col1, detail_col2 = st.columns(2)
+
+    with detail_col1:
+        st.subheader("**Snapshot Summary**")
+        st.write(f"**Unit Number:** {selected_row['unit_number']}")
+        st.write(f"**Timestamp:** {selected_row['timestamp']}")
+        st.write(f"**Predicted RUL:** {selected_row['rul_pred']}")
+        st.write(f"**Conservative RUL Lower Bound:** {selected_row['rul_lower']}")
+        st.write(f"**Risk Band:** {selected_row['risk_band']}")
+        st.write(f"**Recommended Action:** {selected_row['recommended_action']}")
+
+    with detail_col2:
+        st.subheader("**Validation Flags**")
+        st.write(f"**Schema Error:** {selected_row['schema_error']}")
+        st.write(f"**Extrapolation Risk:** {selected_row['extrapolation_risk']}")
+        st.write(f"**Input Anomaly:** {selected_row['input_anomaly']}")
+
 
