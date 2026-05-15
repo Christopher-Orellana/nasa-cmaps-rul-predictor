@@ -7,7 +7,6 @@ import streamlit as st
 st.set_page_config(page_title="NASA CMAPS Dashboard", layout="wide")
 
 st.title("Predictive Maintenance Decision Dashboard")
-st.write("Checkpoint 4: Fleet overview and urgency-ranked table, and snapshot detail view")
 
 DEMO_PATH = Path(__file__).resolve().parent / "dashboard_data" / "demo_inference.jsonl"
 
@@ -59,13 +58,13 @@ else:
     st.subheader("Fleet Overview")
 
     total_snapshots = len(df)
-    avg_rul_pred = df['rul_pred'].mean()
+    avg_rul_pred = df["rul_pred"].mean()
 
     metric_col1, metric_col2 = st.columns(2)
     metric_col1.metric("Total Scored Snapshots", total_snapshots)
-    metric_col2.metric("Average Predicted Remaining Useful Life", f"{avg_rul_pred: .2f}")
+    metric_col2.metric("Average Predicted Remaining Useful Life", f"{avg_rul_pred:.2f}")
 
-    # ---------------Summary Count---------------
+    # --------------- Summary Count ---------------
     summary_col1, summary_col2 = st.columns(2)
     risk_band_order = ["CRITICAL", "RED", "AMBER", "GREEN"]
     action_order = [
@@ -89,7 +88,7 @@ else:
         .reindex(action_order, fill_value=0)
         .reset_index()
     )
-    action_counts.columns =  ["recommended_action", "count"]
+    action_counts.columns = ["recommended_action", "count"]
 
     with summary_col1:
         st.markdown("**Count by Risk Band**")
@@ -99,74 +98,96 @@ else:
         st.markdown("**Count by Recommended Action**")
         st.dataframe(action_counts, use_container_width=True, hide_index=True)
 
-    # --------------- Ranked Table ---------------
-    st.subheader("Ranked Engine Snapshots by Urgency")
-
+    # --------------- Ranked Data ---------------
     display_columns = [
         "unit_number",
         "timestamp",
-        'rul_pred',
-        'rul_lower',
-        'risk_band',
-        'recommended_action',
-        'schema_error',
-        'extrapolation_risk',
-        'input_anomaly'
+        "rul_pred",
+        "rul_lower",
+        "risk_band",
+        "recommended_action",
+        "schema_error",
+        "extrapolation_risk",
+        "input_anomaly"
     ]
 
     available_columns = [col for col in display_columns if col in df.columns]
     ranked_df = df[available_columns].copy()
 
-    if 'rul_pred' in ranked_df.columns:
-        ranked_df['rul_pred'] = ranked_df['rul_pred'].round(2)
+    # --------------- Decision / Triage View ---------------
+    st.subheader("Decision / Triage View: Ranked Engine Snapshots by Urgency")
 
-    if 'rul_lower' in ranked_df.columns:
-        ranked_df['rul_lower'] = ranked_df['rul_lower'].round(2)
+    selected_risk_bands = st.multiselect(
+        "Filter by Risk Band",
+        options=risk_band_order,
+        default=risk_band_order
+    )
 
-    st.dataframe(ranked_df, use_container_width=True, hide_index=True)
+    triage_df = ranked_df.copy()
 
-    # --------------- Snapshot Detail View  ---------------
-    st.subheader('Snapshot Detail View')
+    if selected_risk_bands:
+        triage_df = triage_df[triage_df["risk_band"].isin(selected_risk_bands)]
 
-    detail_df = ranked_df.copy()
+    if "rul_pred" in triage_df.columns:
+        triage_df["rul_pred"] = triage_df["rul_pred"].round(2)
 
-    if 'timestamp' in detail_df.columns:
-        detail_df['timestamp_str'] = detail_df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+    if "rul_lower" in triage_df.columns:
+        triage_df["rul_lower"] = triage_df["rul_lower"].round(2)
+
+    triage_df = triage_df.reset_index(drop=True)
+
+    st.write(f"Filtered snapshots: {len(triage_df)}")
+
+    # --------------- Ranked Table ---------------
+    if triage_df.empty:
+        st.info("No engine snapshots match the selected filters.")
     else:
-        detail_df['timestamp_str'] = "Unknown"
+        st.dataframe(triage_df, use_container_width=True, hide_index=True)
 
-    detail_df['snapshot_label'] = (
-        "Unit "
-        + detail_df['unit_number'].astype(str)
-        + " | "
-        + detail_df['timestamp_str'].astype(str)
-        + " | "
-        + " | RUL Lower: "
-        + detail_df['rul_lower'].astype(str)
-    )
+    # --------------- Snapshot Detail View ---------------
+    st.subheader("Snapshot Detail View")
 
-    selected_label = st.selectbox(
-        "Select a scored engine snapshot",
-        detail_df["snapshot_label"].tolist()
-    )
+    detail_df = triage_df.copy()
 
-    selected_row = detail_df.loc[detail_df["snapshot_label"] == selected_label].iloc[0]
+    if not detail_df.empty:
+        if "timestamp" in detail_df.columns:
+            detail_df["timestamp_str"] = detail_df["timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            detail_df["timestamp_str"] = "Unknown"
 
-    detail_col1, detail_col2 = st.columns(2)
+        detail_df["snapshot_label"] = (
+                "Unit "
+                + detail_df["unit_number"].astype(str)
+                + " | "
+                + detail_df["timestamp_str"].astype(str)
+                + " | "
+                + detail_df["risk_band"].astype(str)
+                + " | RUL Lower: "
+                + detail_df["rul_lower"].astype(str)
+        )
 
-    with detail_col1:
-        st.subheader("**Snapshot Summary**")
-        st.write(f"**Unit Number:** {selected_row['unit_number']}")
-        st.write(f"**Timestamp:** {selected_row['timestamp']}")
-        st.write(f"**Predicted RUL:** {selected_row['rul_pred']}")
-        st.write(f"**Conservative RUL Lower Bound:** {selected_row['rul_lower']}")
-        st.write(f"**Risk Band:** {selected_row['risk_band']}")
-        st.write(f"**Recommended Action:** {selected_row['recommended_action']}")
+        selected_label = st.selectbox(
+            "Select a scored engine snapshot",
+            detail_df["snapshot_label"].tolist()
+        )
 
-    with detail_col2:
-        st.subheader("**Validation Flags**")
-        st.write(f"**Schema Error:** {selected_row['schema_error']}")
-        st.write(f"**Extrapolation Risk:** {selected_row['extrapolation_risk']}")
-        st.write(f"**Input Anomaly:** {selected_row['input_anomaly']}")
+        selected_row = detail_df.loc[detail_df["snapshot_label"] == selected_label].iloc[0]
 
+        detail_col1, detail_col2 = st.columns(2)
 
+        with detail_col1:
+            st.subheader("Snapshot Summary")
+            st.write(f"**Unit Number:** {selected_row['unit_number']}")
+            st.write(f"**Timestamp:** {selected_row['timestamp_str']}")
+            st.write(f"**Predicted RUL:** {selected_row['rul_pred']}")
+            st.write(f"**Conservative RUL Lower Bound:** {selected_row['rul_lower']}")
+            st.write(f"**Risk Band:** {selected_row['risk_band']}")
+            st.write(f"**Recommended Action:** {selected_row['recommended_action']}")
+
+        with detail_col2:
+            st.subheader("Validation Flags")
+            st.write(f"**Schema Error:** {selected_row['schema_error']}")
+            st.write(f"**Extrapolation Risk:** {selected_row['extrapolation_risk']}")
+            st.write(f"**Input Anomaly:** {selected_row['input_anomaly']}")
+    else:
+        st.info("No snapshot available for detail view.")
