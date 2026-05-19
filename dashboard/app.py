@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 
 # Set basic dashboard page settings
-st.set_page_config(page_title="NASA CMAPS Dashboard", layout="wide")
+st.set_page_config(page_title="NASA CMAPSS Dashboard", layout="wide")
 
 st.title("Predictive Maintenance Decision Dashboard")
 
@@ -65,39 +65,23 @@ else:
     metric_col2.metric("Average Predicted Remaining Useful Life", f"{avg_rul_pred:.2f}")
 
     # --------------- Summary Count ---------------
-    summary_col1, summary_col2 = st.columns(2)
     risk_band_order = ["CRITICAL", "RED", "AMBER", "GREEN"]
-    action_order = [
-        "REMOVE_FROM_SERVICE",
-        "SCHEDULE_MAINTENANCE",
-        "INSPECT",
-        "CONTINUE"
-    ]
+    action_map = {
+        "CRITICAL": "REMOVE_FROM_SERVICE",
+        "RED": "SCHEDULE_MAINTENANCE",
+        "AMBER": "INSPECT",
+        "GREEN": "CONTINUE"
+    }
 
-    risk_counts = (
+    summary_counts = (
         df["risk_band"]
         .value_counts()
         .reindex(risk_band_order, fill_value=0)
-        .reset_index()
+        .rename_axis("risk_band")
+        .reset_index(name="count")
     )
-    risk_counts.columns = ["risk_band", "count"]
 
-    action_counts = (
-        df["recommended_action"]
-        .value_counts()
-        .reindex(action_order, fill_value=0)
-        .reset_index()
-    )
-    action_counts.columns = ["recommended_action", "count"]
-
-    with summary_col1:
-        st.markdown("**Count by Risk Band**")
-        st.dataframe(risk_counts, use_container_width=True, hide_index=True)
-
-    with summary_col2:
-        st.markdown("**Count by Recommended Action**")
-        st.dataframe(action_counts, use_container_width=True, hide_index=True)
-
+    summary_counts["recommended_action"] = summary_counts['risk_band']
     # --------------- Ranked Data ---------------
     display_columns = [
         "unit_number",

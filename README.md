@@ -1,8 +1,9 @@
 # NASA CMAPSS FD001 — Predictive Maintenance System
 
 Predictive maintenance system built on NASA CMAPSS FD001, designed for **systems-oriented** 
-and **safety-critical** data roles, It is a **training → artifacts → inference** pipeline made
-for gauging engine health and outputting a recommendation and status based on model prediction.
+and **safety-critical** data roles, It is a **training → artifacts → inference → Dashboard** pipeline made
+for gauging engine health and outputting a recommendation and status based on model prediction
+to support maintenance triage decisions.
 
 ---
 
@@ -17,6 +18,8 @@ for gauging engine health and outputting a recommendation and status based on mo
   - distribution-based anomaly and extrapolation risk flags
   - conservative decision policy using a lower confidence bound
   - structured JSONL logging for audit trails
+- Provides a **Streamlit dashboard** for a engine fleet overview, triage filtering and snapshot
+  level inspection.
 
 ---
 
@@ -51,26 +54,48 @@ writes metrics and metadata to `artifacts/`.
 
 ```
 nasa-cmaps-pipeline/
-├── src/
-│   ├── __init__.py
-│   ├── data_loader.py
-│   ├── training/
-│   │   ├── __init__.py
-│   │   └── train_baseline.py
-│   └── inference/
-│       ├── __init__.py
-│       ├── predict.py
-│       └── test_predict.py
-├── data/processed/fd001_processed.csv
 ├── artifacts/
 │   ├── feature_schema.json
 │   ├── metrics.json
 │   ├── model.joblib
 │   └── scaler.joblib
-├── logs/inference.jsonl
+├── dashboard/
+│   ├── dashboard_data/
+│   │   └── demo_inference.jsonl
+│   └── app.py
+├── data/
+│   └── processed/
+│       └── fd001_processed.csv
+├── docs/
+│   ├── failure_modes.md
+│   ├── inference_pipeline.md
+│   ├── system_design.md
+│   └── training_pipeline.md
+├── logs/
+│   └── inference.jsonl
 ├── notebooks/
-│   ├── eda.ipynb
-│   └── modeling_baseline.ipynb
+│   ├── 00_preprocess_fd001.ipynb
+│   ├── 01_eda.ipynb
+│   └── 02_modeling-baseline.ipynb
+├── plots/
+│   └── saved EDA figures
+├── scripts/
+│   ├── generate_sample_logs.py
+│   └── run_predict_smoke.py
+├── src/
+│   ├── __init__.py
+│   ├── data_loader.py
+│   ├── inference/
+│   │   ├── __init__.py
+│   │   └── predict.py
+│   └── training/
+│       └── __init__.py
+├── tests/
+│   ├── __init__.py
+│   └── test_predict.py
+├── .gitignore
+├── Damage Propagation Modeling.pdf
+├── LICENSE
 ├── README.md
 └── requirements.txt
 ```
@@ -123,6 +148,57 @@ Every inference outputs a structured JSON record to:
 providing a complete audit trail for post-hoc analysis.
 
 ---
+## Dashboard
+The final system layer is a **Streamlit decision-support dashboard** built on top of the
+inference outputs.
+
+The dashboard is designed for a maintenance analyst, operations analyst, or reliability engineer
+to quickly answer:
+- Which engines are most at risk?
+- Which cases should be prioritized first?
+- What is the predicted RUL and conservative lower bound for a selected snapshot?
+- What action is recommended?
+
+### Dashboard Inputs
+
+The dashboard demo consumes inference records from:
+ - `dashboard/dashboard_data/demo_inference.jsonl`
+
+This demo input follows the same structured outputs produced by the inference layer, which includes:
+
+- `unit_number`
+- `timestamp`
+- `rul_pred`
+- `rul_lower`
+- `risk_band`
+- `recommended_action`
+- `validation flags`
+
+### Dashboard views
+
+The dashboard is organized into three decision-oriented sections:
+
+1. **Fleet Overview**
+    - Total number of scored snapshots
+    - Average predicted RUL
+    - combined summary of risk band, recommended action, and count
+
+2. **Decision / Triage View**
+    - Urgency-ranked snapshot list
+    - Filtering by risk band
+    - Prioritization based on lowest `rul_lower`
+
+3. **Snapshot Detail View**
+    - Inspection of one selected scored snapshot
+    - Predicted RUL
+    - Conservative lower bound (RUL)
+    - Risk band
+    - Validation flags
+
+It is important to note that the dashboard doesn't call the model directly. It operates as the
+decision support layer on top of the structured inference outputs logged.
+
+---
 
 ## How to run
 
@@ -134,9 +210,17 @@ pip install -r requirements.txt
 ```bash
 python -m src.training.train_baseline
 ```
-### 3. Run a single inference example
+### 3. Run tests
 ```bash
-python -m src.inference.test_predict
+pytest
+```
+### 4. Run single snapshot inference smoke check
+```bash
+python scripts/run_predict_smoke.py
+```
+### 5. Launch Dashboard
+```bash
+streamlit run dashboard/app.py
 ```
 ---
 
