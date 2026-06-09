@@ -1,9 +1,6 @@
 # NASA CMAPSS FD001 — Predictive Maintenance System
 
-Predictive maintenance system built on NASA CMAPSS FD001, designed for **systems-oriented** 
-and **safety-critical** data roles, It is a **training → artifacts → inference → Dashboard** pipeline made
-for gauging engine health and outputting a recommendation and status based on model prediction
-to support maintenance triage decisions.
+Unplanned engine failures cost organizations millions in repairs, program delays, and downtime. This system predicts Remaining Useful Life (RUL) for jet engines using NASA’s CMAPSS FD001 dataset — the same simulation data used by NASA Glenn Research Center for propulsion health management research. My system outputs risk-banded recommendations to support maintenance triage decisions before failure occurs.
 
 ---
 
@@ -24,7 +21,7 @@ to support maintenance triage decisions.
 ---
 
 ## Dataset and scope
-
+CMAPSS originates from NASA Glenn Research Center’s propulsion health management research program. FD001 represents a single fault mode and single operating condition - a controlled scope chosen to establish a clean, reproducible baseline before extending to multi-condition subsets.
 - Dataset: **CMAPSS FD001** (single operating condition, single fault mode)
 - Raw data: immutable (not tracked here)
 - Processed dataset (single source of truth for all runs):
