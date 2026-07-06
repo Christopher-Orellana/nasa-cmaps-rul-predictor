@@ -7,7 +7,7 @@ import pandas as pd
 import joblib
 
 
-#
+# Define metadata for the script
 EXPECTED_ARTIFACT_VERSION = "baseline_v1"
 REQUIRED_METADATA = ['unit_number']
 FEATURE_ORDER = ["sensor_4", "sensor_11", "sensor_15"]
