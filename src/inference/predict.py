@@ -34,12 +34,16 @@ with open(ARTIFACT_DIR / "metrics.json") as f:
 model = joblib.load(ARTIFACT_DIR / "model.joblib")
 scaler = joblib.load(ARTIFACT_DIR / "scaler.joblib")
 
-# Check compatability for artifacts
-if feature_schema["artifact_version"] != EXPECTED_ARTIFACT_VERSION:
-    raise RuntimeError("Feature schema artifact version mismatch")
+# Check compatibility for artifacts
+actual_schema_version = feature_schema.get("artifact_version")
 
-if metrics["artifact_version"] != EXPECTED_ARTIFACT_VERSION:
-    raise RuntimeError("Metrics artifact version mismatch")
+if actual_schema_version != EXPECTED_ARTIFACT_VERSION:
+    raise RuntimeError(f"Feature schema artifact version mismatch: expected {EXPECTED_ARTIFACT_VERSION}, got {actual_schema_version}")
+
+actual_metrics_version = metrics.get("artifact_version")
+
+if actual_metrics_version != EXPECTED_ARTIFACT_VERSION:
+    raise RuntimeError(f"Metrics artifact version mismatch: expected {EXPECTED_ARTIFACT_VERSION}, got {actual_metrics_version}")
 
 # Inference function
 def predict_rul(input_data: dict) -> dict:
